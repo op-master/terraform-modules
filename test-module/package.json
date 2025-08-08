@@ -1,0 +1,19 @@
+{
+    "name": "tf-aws-test-module",
+    "description": "tf-aws-test-module",
+    "private": true,
+    "devDependencies": {
+      "@semantic-release/github": "^11.0.0",
+      "semantic-release": "^24.0.0"
+    },
+    "release": {
+      "branches": [
+        "main"
+      ]
+    },
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/github"
+    ]
+}
