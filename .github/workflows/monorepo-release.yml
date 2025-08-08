@@ -59,18 +59,9 @@ jobs:
         with:
           app_id: ${{ secrets.appId }}
           private_key: ${{ secrets.appPrivateKey }}
-
-      - name: Authenticate to git with bot token
-        env:
-          APP_ID: ${{ secrets.appId }}
-          PRIVATE_KEY: ${{ secrets.appPrivateKey }}
-        if: ${{ env.APP_ID != null && env.PRIVATE_KEY != null }}
-        run: |
-          echo ${{ steps.generate_token.outputs.token }} | gh auth login --with-token
-          gh auth setup-git
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           cd "${{ matrix.module }}"
           npx semantic-release -t "${{ matrix.module }}"/'${version}'
