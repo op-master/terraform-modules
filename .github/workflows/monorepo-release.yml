@@ -49,6 +49,25 @@ jobs:
         run: |
           cd "${{ matrix.module }}"
           npm install
+      - name: Generate token
+        env:
+          APP_ID: ${{ secrets.appId }}
+          PRIVATE_KEY: ${{ secrets.appPrivateKey }}
+        if: ${{ env.APP_ID != null && env.PRIVATE_KEY != null }}
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.appId }}
+          private_key: ${{ secrets.appPrivateKey }}
+
+      - name: Authenticate to git with bot token
+        env:
+          APP_ID: ${{ secrets.appId }}
+          PRIVATE_KEY: ${{ secrets.appPrivateKey }}
+        if: ${{ env.APP_ID != null && env.PRIVATE_KEY != null }}
+        run: |
+          echo ${{ steps.generate_token.outputs.token }} | gh auth login --with-token
+          gh auth setup-git
       - name: Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
