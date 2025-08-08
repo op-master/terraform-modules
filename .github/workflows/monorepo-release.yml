@@ -28,7 +28,6 @@ jobs:
           files: ''
           files_ignore: |
             .github/**
-            scripts/**
 
   release:
     name: Release
@@ -38,6 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         module: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    if: ${{ fromJson(needs.generate-matrix.outputs.matrix).include[0] }}
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
@@ -50,16 +50,6 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
-      - name: Get GitHub App User ID
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-      - run: |
-          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
-          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
-          git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}
-          git push --dry-run --no-verify https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/op-master/terraform-modules HEAD:main
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -68,9 +58,16 @@ jobs:
         run: |
           cd "${{ matrix.module }}"
           npm install
+      - name: Get GitHub App User ID
+        id: get-user-id
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
       - name: Release
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
           cd "${{ matrix.module }}"
-          npx semantic-release -t "${{ matrix.module }}"/'${version}'
+          npx semantic-release -t "${{ matrix.module }}"/'v${version}'
