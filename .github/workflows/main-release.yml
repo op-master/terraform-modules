@@ -38,8 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
-    if: ${{ fromJson(needs.generate-matrix.outputs.matrix).include[0] }}
+      matrix:
+        module: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,11 +51,11 @@ jobs:
           node-version: 'lts/*'
       - name: Install dependencies
         run: |
-          cd modules/${{ matrix.module }}
+          cd ${{ matrix.module }}
           npm install
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd modules/${{ matrix.module }}
+          cd ${{ matrix.module }}
           npx semantic-release -t ${{ matrix.module }}/'v${version}'
