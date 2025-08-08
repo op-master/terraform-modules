@@ -1,0 +1,61 @@
+name: Module release
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  issues: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-matrix:
+    name: Generate matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.get-matrix.outputs.all_changed_files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get matrix
+        id: get-matrix
+        uses: tj-actions/changed-files@v46
+        with:
+          path: ''
+          dir_names: true
+          json: true
+          escape_json: false
+          dir_names_exclude_current_dir: false
+          dir_names_max_depth: 1
+          files: ''
+          files_ignore: |
+            .github/**
+
+  release-module:
+    needs: generate-matrix
+    name: Release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    if: ${{ fromJson(needs.generate-matrix.outputs.matrix).include[0] }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: |
+          cd modules/${{ matrix.module }}
+          npm install
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd modules/${{ matrix.module }}
+          npx semantic-release -t ${{ matrix.module }}/'v${version}'
